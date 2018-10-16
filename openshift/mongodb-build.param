@@ -1,0 +1,10 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: templates/MongoDB/mongodb-build.json
+#=========================================================
+NAME=mongodb
+OUTPUT_IMAGE_TAG=latest
+SOURCE_IMAGE_KIND=DockerImage
+SOURCE_IMAGE_NAME=registry.access.redhat.com/rhscl/mongodb-36-rhel7
+SOURCE_IMAGE_TAG=latest

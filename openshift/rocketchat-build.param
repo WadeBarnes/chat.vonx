@@ -1,0 +1,10 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: templates/Rocket.Chat/rocketchat-build.json
+#=========================================================
+NAME=rocketchat
+OUTPUT_IMAGE_TAG=latest
+SOURCE_IMAGE_KIND=DockerImage
+SOURCE_IMAGE_NAME=rocketchat/rocket.chat
+SOURCE_IMAGE_TAG=latest

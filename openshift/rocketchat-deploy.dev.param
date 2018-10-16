@@ -1,0 +1,14 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: templates/Rocket.Chat/rocketchat-deploy.json
+#=========================================================
+# NAME=rocketchat
+# IMAGE_NAMESPACE=devex-von-tools
+# SOURCE_IMAGE_NAME=rocketchat
+TAG_NAME=dev
+# DATABASE_SERVICE_NAME=mongodb
+# CPU_REQUEST=100m
+# CPU_LIMIT=1500m
+# MEMORY_REQUEST=100Mi
+# MEMORY_LIMIT=1000Mi

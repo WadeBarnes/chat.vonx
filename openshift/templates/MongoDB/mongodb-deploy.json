@@ -1,0 +1,341 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "${NAME}",
+        "annotations": {
+            "description": "MongoDB database running with a Persistent storage.",
+            "tags": "${NAME}"
+        }
+    },
+    "objects": [
+        {
+            "kind": "Secret",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "labels": {
+                    "app": "${NAME}"
+                }
+            },
+            "stringData": {
+                "database-name": "${MONGODB_DATABASE}",
+                "database-user": "${MONGODB_USER}",
+                "database-password": "${MONGODB_PASSWORD}",
+                "admin-password": "${MONGODB_ADMIN_PASSWORD}",
+                "database-url": "mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${NAME}:27017/${MONGODB_DATABASE}"
+            },
+            "type": "Opaque"
+        },
+        {
+            "kind": "PersistentVolumeClaim",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}"
+            },
+            "spec": {
+                "storageClassName": "${PERSISTENT_VOLUME_CLASS}",
+                "accessModes": [
+                    "ReadWriteOnce"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${PERSISTENT_VOLUME_SIZE}"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "labels": {
+                    "template": "${NAME}-persistent-template"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Recreate",
+                    "recreateParams": {
+                        "timeoutSeconds": 600
+                    }
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${NAME}"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "namespace": "${IMAGE_NAMESPACE}",
+                                "name": "${SOURCE_IMAGE_NAME}:${TAG_NAME}"
+                            }
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "test": false,
+                "selector": {
+                    "name": "${NAME}"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "${NAME}"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "${NAME}",
+                                "image": " ",
+                                "ports": [
+                                    {
+                                        "containerPort": 27017,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "env": [
+                                    {
+                                        "name": "MONGODB_DATABASE",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${NAME}",
+                                                "key": "database-name"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "MONGODB_USER",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${NAME}",
+                                                "key": "database-user"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "MONGODB_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${NAME}",
+                                                "key": "database-password"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "MONGODB_ADMIN_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "${NAME}",
+                                                "key": "admin-password"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "resources": {
+                                    "requests": {
+                                        "cpu": "${CPU_REQUEST}",
+                                        "memory": "${MEMORY_REQUEST}"
+                                    },
+                                    "limits": {
+                                        "cpu": "${CPU_LIMIT}",
+                                        "memory": "${MEMORY_LIMIT}"
+                                    }
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "name": "${NAME}-data",
+                                        "mountPath": "/var/lib/mongodb/data"
+                                    }
+                                ],
+                                "livenessProbe": {
+                                    "tcpSocket": {
+                                        "port": 27017
+                                    },
+                                    "initialDelaySeconds": 30,
+                                    "timeoutSeconds": 1,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "failureThreshold": 3
+                                },
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/sh",
+                                            "-i",
+                                            "-c",
+                                            "mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD --eval=\"quit()\""
+                                        ]
+                                    },
+                                    "initialDelaySeconds": 3,
+                                    "timeoutSeconds": 1,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "failureThreshold": 3
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "imagePullPolicy": "IfNotPresent",
+                                "securityContext": {
+                                    "capabilities": {},
+                                    "privileged": false
+                                }
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "name": "${NAME}-data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "${NAME}"
+                                }
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "terminationGracePeriodSeconds": 30,
+                        "dnsPolicy": "ClusterFirst",
+                        "securityContext": {}
+                    }
+                }
+            },
+            "status": {}
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${NAME}",
+                "labels": {
+                    "template": "${NAME}-persistent-template"
+                }
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "mongo",
+                        "protocol": "TCP",
+                        "port": 27017,
+                        "targetPort": 27017
+                    }
+                ],
+                "selector": {
+                    "name": "${NAME}"
+                },
+                "type": "ClusterIP",
+                "sessionAffinity": "None"
+            },
+            "status": {
+                "loadBalancer": {}
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "NAME",
+            "displayName": "Name",
+            "description": "The name assigned to all of the resources defined in this template.",
+            "required": true,
+            "value": "mongodb"
+        },
+        {
+            "name": "IMAGE_NAMESPACE",
+            "displayName": "Image Namespace",
+            "required": true,
+            "description": "The namespace of the OpenShift project containing the imagestream for the application.",
+            "value": "devex-von-tools"
+        },
+        {
+            "name": "SOURCE_IMAGE_NAME",
+            "displayName": "Source Image Name",
+            "description": "The name of the image to use for this resource.",
+            "required": true,
+            "value": "mongodb"
+        },
+        {
+            "name": "TAG_NAME",
+            "displayName": "Environment TAG name",
+            "description": "The TAG name for this environment, e.g., dev, test, prod",
+            "required": true,
+            "value": "dev"
+        },
+        {
+            "name": "MONGODB_DATABASE",
+            "displayName": "MongoDB Database Name",
+            "description": "Name of the MongoDB database accessed.",
+            "value": "rocketchatdb",
+            "required": true
+        },
+        {
+            "name": "MONGODB_USER",
+            "displayName": "MongoDB User",
+            "description": "Username for MongoDB user that will be used for accessing the database.",
+            "generate": "expression",
+            "from": "user[A-Z0-9]{3}",
+            "required": true
+        },
+        {
+            "name": "MONGODB_PASSWORD",
+            "displayName": "MongoDB Password",
+            "description": "Password for the MongoDB user.",
+            "generate": "expression",
+            "from": "[a-zA-Z0-9]{16}",
+            "required": true
+        },
+        {
+            "name": "MONGODB_ADMIN_PASSWORD",
+            "displayName": "MongoDB Admin Password",
+            "description": "Password for the database admin user.",
+            "generate": "expression",
+            "from": "[a-zA-Z0-9]{16}",
+            "required": true
+        },
+        {
+            "name": "PERSISTENT_VOLUME_SIZE",
+            "displayName": "Persistent Volume Size",
+            "description": "The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.",
+            "required": true,
+            "value": "1Gi"
+        },
+        {
+            "name": "PERSISTENT_VOLUME_CLASS",
+            "displayName": "Persistent Volume Class name",
+            "description": "The class of the volume; gluster-file, gluster-block, gluster-file-db",
+            "required": false,
+            "value": "gluster-file-db"
+        },
+        {
+            "name": "CPU_REQUEST",
+            "displayName": "Resources CPU Request",
+            "description": "The resources CPU request (in cores) for this build.",
+            "required": true,
+            "value": "100m"
+        },
+        {
+            "name": "CPU_LIMIT",
+            "displayName": "Resources CPU Limit",
+            "description": "The resources CPU limit (in cores) for this build.",
+            "required": true,
+            "value": "1000m"
+        },
+        {
+            "name": "MEMORY_REQUEST",
+            "displayName": "Resources Memory Request",
+            "description": "The resources Memory request (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "100Mi"
+        },
+        {
+            "name": "MEMORY_LIMIT",
+            "displayName": "Resources Memory Limit",
+            "description": "The resources Memory limit (in Mi, Gi, etc) for this build.",
+            "required": true,
+            "value": "1000Mi"
+        }
+    ]
+}
