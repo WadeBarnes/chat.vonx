@@ -127,6 +127,13 @@ Finish off by reviewing and updating other site settings, such as configuring em
 
 ### Documentation:
 
+*At the time of writing (2018.10.17) I found the Rocket.Chat documentation to be a little sparse and it does not reflect the current version completely.*
+
+- [Rocket.Chat Documentation](https://rocket.chat/docs/)
+- [Rocket.Chat Administrator Guides](https://rocket.chat/docs/administrator-guides/)
+
+### Documentation - Deploying Rocket.Chat on OpenShift
+
 Various articles on how to deploy Rocket.Chat into OpenShift which are just historical reference material now.  For the most part you can ignore these articles.  The templates and scripts for this project handle all the details for you.
 
 *You don't need to disable the domain check for email as described in the articles.*
