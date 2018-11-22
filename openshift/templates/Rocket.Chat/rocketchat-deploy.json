@@ -153,9 +153,6 @@
         "name": "${NAME}",
         "labels": {
           "app": "${NAME}"
-        },
-        "annotations": {
-          "openshift.io/host.generated": "true"
         }
       },
       "spec": {
@@ -167,6 +164,7 @@
           "kind": "Service",
           "name": "${NAME}"
         },
+        "host": "${APPLICATION_DOMAIN}",
         "port": {
           "targetPort": "3000-tcp"
         }
@@ -230,6 +228,12 @@
       "description": "The TAG name for this environment, e.g., dev, test, prod",
       "required": true,
       "value": "prod"
+    },
+    {
+      "description": "The exposed hostname that will route to the service, e.g., myappname.pathfinder.gov.bc.ca, if left blank a value will be defaulted.",
+      "displayName": "Application Hostname",
+      "name": "APPLICATION_DOMAIN",
+      "value": "chat.vonx.io"
     },
     {
       "name": "DATABASE_SERVICE_NAME",

@@ -7,6 +7,7 @@
 # IMAGE_NAMESPACE=devex-von-tools
 # SOURCE_IMAGE_NAME=rocketchat
 TAG_NAME=test
+APPLICATION_DOMAIN=test.chat.vonx.io
 # DATABASE_SERVICE_NAME=mongodb
 # CPU_REQUEST=100m
 # CPU_LIMIT=1500m
